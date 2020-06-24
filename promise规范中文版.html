@@ -1,0 +1,168 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+
+<article class="article fmt article-content" data-id="1190000002452115" data-license="cc">
+
+  <p>Promise表示一个异步操作的最终结果。与Promise最主要的交互方法是通过将函数传入它的then方法从而获取得Promise最终的值或Promise最终最拒绝（reject）的原因。</p>
+
+  <h2 id="item-1">1. 术语</h2>
+
+  <p><code>promise</code>是一个包含了兼容promise规范then方法的对象或函数，<br><code>thenable</code>
+    是一个包含了then方法的对象或函数。<br><code>value</code> 是任何Javascript值。 (包括 undefined, thenable,
+    promise等).<br><code>exception</code> 是由<code>throw</code>表达式抛出来的值。<br><code>reason</code> 是一个用于描述Promise被拒绝原因的值。</p>
+
+  <h2 id="item-2">2. 要求</h2>
+
+  <h3 id="item-2-1">2.1 Promise状态</h3>
+
+  <p>一个Promise必须处在其中之一的状态：pending, fulfilled 或 rejected.</p>
+
+  <ul>
+    <li>如果是pending状态,则promise：<br><br>
+      <ul>
+        <li>可以转换到fulfilled或rejected状态。</li>
+      </ul>
+    </li>
+    <li>如果是fulfilled状态,则promise：<br><br>
+      <ul>
+        <li>不能转换成任何其它状态。</li>
+        <li>必须有一个值，且这个值不能被改变。</li>
+      </ul>
+    </li>
+    <li>如果是rejected状态,则promise可以：<br><br>
+      <ul>
+        <li>不能转换成任何其它状态。</li>
+        <li>必须有一个原因，且这个值不能被改变。</li>
+      </ul>
+    </li>
+  </ul>
+  <p>”值不能被改变”指的是其identity不能被改变，而不是指其成员内容不能被改变。</p>
+
+  <h3 id="item-2-2">2.2 <code>then</code> 方法</h3>
+
+  <p>一个Promise必须提供一个then方法来获取其值或原因。<br>
+    Promise的then方法接受两个参数：</p>
+
+  <div class="widget-codetool" style="display:none;">
+    <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title=""
+            data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="promise.then(onFulfilled, onRejected)
+" title="" data-original-title="复制"></span>
+    </div>
+  </div>
+  <pre class="javascript hljs"><code class="js">promise.then(onFulfilled, onRejected)
+</code></pre>
+
+  <ol>
+    <li>
+      <code>onFulfilled</code> 和 <code>onRejected</code> 都是可选参数：<br><br>
+      <ol>
+        <li>如果<code>onFulfilled</code>不是一个函数，则忽略之。</li>
+        <li>如果<code>onRejected</code>不是一个函数，则忽略之。</li>
+      </ol>
+    </li>
+    <li>如果<code>onFulfilled</code>是一个函数:<br><br>
+      <ol>
+        <li>它必须在<code>promise</code> fulfilled后调用， 且<code>promise</code>的value为其第一个参数。</li>
+        <li>它不能在<code>promise</code> fulfilled前调用。</li>
+        <li>不能被多次调用。</li>
+      </ol>
+    </li>
+    <li>如果<code>onRejected</code>是一个函数,<br><br>
+      <ol>
+        <li>它必须在<code>promise</code> rejected后调用， 且<code>promise</code>的reason为其第一个参数。</li>
+        <li>它不能在<code>promise</code> rejected前调用。</li>
+        <li>不能被多次调用。</li>
+      </ol>
+    </li>
+    <li>
+      <code>onFulfilled</code> 和 <code>onRejected</code> 只允许在 <a rel="nofollow" href="https://es5.github.io/#x10.3"
+                                                                 target="_blank">execution context</a> 栈仅包含平台代码时运行. [<a
+            rel="nofollow" target="_blank">3.1</a>].
+    </li>
+    <li>
+      <code>onFulfilled</code> 和 <code>onRejected</code> 必须被当做函数调用 (i.e. 即函数体内的 <code>this</code>
+      为<code>undefined</code>). [<a rel="nofollow" target="_blank">3.2</a>]
+    </li>
+    <li>对于一个<code>promise</code>，它的then方法可以调用多次.<br><br>
+      <ol>
+        <li>当<code>promise</code> fulfilled后，所有<code>onFulfilled</code>都必须按照其注册顺序执行。</li>
+        <li>当<code>promise</code> rejected后，所有<code>OnRejected</code>都必须按照其注册顺序执行。</li>
+      </ol>
+    </li>
+    <li>
+      <p><code>then</code> 必须返回一个promise [<a rel="nofollow" target="_blank">3.3</a>].</p>
+
+      <div class="widget-codetool" style="display:none;">
+        <div class="widget-codetool--inner">
+          <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title=""
+                data-original-title="全选"></span>
+          <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top"
+                data-clipboard-text="promise2 = promise1.then(onFulfilled, onRejected);
+" title="" data-original-title="复制"></span>
+        </div>
+      </div>
+      <pre class="javascript hljs"><code class="js">promise2 = promise1.then(onFulfilled, onRejected);
+</code></pre>
+
+      <ol>
+        <li>如果<code>onFulfilled</code> 或 <code>onRejected</code> 返回了值<code>x</code>, 则执行Promise 解析流程<code>[[Resolve]](promise2,
+          x)</code>.
+        </li>
+        <li>如果<code>onFulfilled</code> 或 <code>onRejected</code>抛出了异常<code>e</code>,
+          则<code>promise2</code>应当以<code>e</code>为<code>reason</code>被拒绝。
+        </li>
+        <li>如果 <code>onFulfilled</code>
+          不是一个函数且<code>promise1</code>已经fulfilled，则<code>promise2</code>必须以<code>promise1</code>的值fulfilled.
+        </li>
+        <li>如果 <code>OnReject</code> 不是一个函数且<code>promise1</code>已经rejected, 则<code>promise2</code>必须以相同的reason被拒绝.</li>
+      </ol>
+    </li>
+  </ol>
+  <h3 id="item-2-3">2.3 Promise解析过程</h3>
+
+  <p><strong>Promise解析过程</strong> 是以一个promise和一个值做为参数的抽象过程，可表示为<code>[[Resolve]](promise, x)</code>. 过程如下；</p>
+
+  <ol>
+    <li>如果<code>promise</code> 和 <code>x</code> 指向相同的值, 使用 <code>TypeError</code>做为原因将<code>promise</code>拒绝。</li>
+    <li>如果 <code>x</code> 是一个<code>promise</code>, 采用其状态 [<a rel="nofollow" target="_blank">3.4</a>]:<br><br>
+      <ol>
+        <li>如果<code>x</code>是pending状态，<code>promise</code>必须保持pending走到<code>x</code> fulfilled或rejected.</li>
+        <li>如果<code>x</code>是fulfilled状态，将<code>x</code>的值用于fulfill <code>promise</code>.</li>
+        <li>如果<code>x</code>是rejected状态, 将<code>x</code>的原因用于reject <code>promise</code>..</li>
+      </ol>
+    </li>
+    <li>如果<code>x</code>是一个对象或一个函数：<br><br>
+      <ol>
+        <li>将 <code>then</code> 赋为 <code>x.then</code>. [<a rel="nofollow" target="_blank">3.5</a>]</li>
+        <li>如果在取<code>x.then</code>值时抛出了异常，则以这个异常做为原因将<code>promise</code>拒绝。</li>
+        <li>如果 <code>then</code> 是一个函数， 以<code>x</code>为<code>this</code>调用<code>then</code>函数， 且第一个参数是<code>resolvePromise</code>，第二个参数是<code>rejectPromise</code>，且：<br><br>
+          <ol>
+            <li>当 <code>resolvePromise</code> 被以 <code>y</code>为参数调用, 执行 <code>[[Resolve]](promise, y)</code>.</li>
+            <li>当 <code>rejectPromise</code> 被以 <code>r</code> 为参数调用, 则以<code>r</code>为原因将<code>promise</code>拒绝。</li>
+            <li>如果 <code>resolvePromise</code> 和 <code>rejectPromise</code> 都被调用了，或者被调用了多次，则只第一次有效，后面的忽略。</li>
+            <li>如果在调用<code>then</code>时抛出了异常，则：<br><br>
+              <ol>
+                <li>如果 <code>resolvePromise</code> 或 <code>rejectPromise</code> 已经被调用了，则忽略它。</li>
+                <li>否则, 以<code>e</code>为reason将 <code>promise</code> 拒绝。</li>
+              </ol>
+            </li>
+          </ol>
+        </li>
+        <li>如果 <code>then</code>不是一个函数，则 以<code>x</code>为值fulfill <code>promise</code>。</li>
+      </ol>
+    </li>
+    <li>如果 <code>x</code> 不是对象也不是函数，则以<code>x</code>为值 fulfill <code>promise</code>。</li>
+  </ol>
+  <h2 id="item-3">补充</h2>
+
+  <p>英文原文地址：<a rel="nofollow" href="http://promisesaplus.com" target="_blank">http://promisesaplus.com</a><br>
+    若要了解文中每一条规则，则参阅其测试仓库：<a rel="nofollow" href="https://github.com/promises-aplus/promises-tests/tree/master/lib/tests"
+                            target="_blank">https://github.com/promises-aplus/promises-tests/tree/master/lib/tests</a>
+  </p>
+
+</article>
+</html>
