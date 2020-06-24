@@ -22,14 +22,14 @@ var $ = {
 };
 function Resolve(promise, x) {
     if (promise === x) {
-        promise.transition(State.REJECTED, new TypeError("The promise and its value refer to the same object"));
+        promise.reject(new TypeError("The promise and its value refer to the same object"));
     }
     else if ($.isPromise(x)) {
         if (x.state === State.pending) {
             x.then(function (val) {
                 Resolve(promise, val);
             }, function (reason) {
-                promise.transition(State.REJECTED, reason);
+                promise.reject(reason);
             });
         }
         else {
@@ -37,7 +37,8 @@ function Resolve(promise, x) {
         }
     }
     else if ($.isObject(x) || $.isFunction(x)) {
-        var called_1 = false;
+        //下面这段代码是整个promise中最难以理解的，主要是考虑到并发时，无法确定哪一段代码先执行到。
+        var called_1 = false; //防止调用多次
         try {
             var thenHandler = x.then;
             if ($.isFunction(thenHandler)) {
@@ -61,13 +62,18 @@ function Resolve(promise, x) {
         catch (e) {
             if (!called_1) {
                 promise.reject(e);
-                called_1 = true;
             }
         }
     }
     else {
         promise.fulfill(x);
     }
+}
+function fulfillFallBack(value) {
+    return value;
+}
+function rejectFallBack(reason) {
+    throw reason;
 }
 var Promis = /** @class */ (function () {
     function Promis(fn) {
@@ -87,21 +93,11 @@ var Promis = /** @class */ (function () {
             });
         }
     }
-    Promis.prototype.reject = function (reason) {
-        this.transition(State.REJECTED, reason);
-    };
-    Promis.prototype.fulfill = function (value) {
-        this.transition(State.FULFILLED, value);
-    };
     Promis.prototype.process = function () {
-        var that = this, fulfillFallBack = function (value) {
-            return value;
-        }, rejectFallBack = function (reason) {
-            throw reason;
-        };
         if (this.state === State.pending) {
             return;
         }
+        var that = this;
         $.runAsync(function () {
             while (that.queue.length) {
                 var queuedPromise = that.queue.shift(), handler = null, value = void 0;
@@ -118,7 +114,7 @@ var Promis = /** @class */ (function () {
                     value = handler(that.value);
                 }
                 catch (e) {
-                    queuedPromise.transition(State.REJECTED, e);
+                    queuedPromise.reject(e);
                     continue;
                 }
                 Resolve(queuedPromise, value);
@@ -131,6 +127,12 @@ var Promis = /** @class */ (function () {
         this.value = value;
         this.state = state;
         this.process();
+    };
+    Promis.prototype.reject = function (reason) {
+        this.transition(State.REJECTED, reason);
+    };
+    Promis.prototype.fulfill = function (value) {
+        this.transition(State.FULFILLED, value);
     };
     Promis.prototype.then = function (onFulfilled, onRejected) {
         var queuedPromise = new Promis(null);

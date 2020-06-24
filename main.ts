@@ -19,19 +19,20 @@ const $ = {
 
 function Resolve(promise, x) {
   if (promise === x) {
-    promise.transition(State.REJECTED, new TypeError("The promise and its value refer to the same object"));
+    promise.reject(new TypeError("The promise and its value refer to the same object"));
   } else if ($.isPromise(x)) {
     if (x.state === State.pending) {
-      x.then(function (val) {
+      x.then(val => {
         Resolve(promise, val);
-      }, function (reason) {
-        promise.transition(State.REJECTED, reason);
+      }, reason => {
+        promise.reject(reason);
       });
     } else {
       promise.transition(x.state, x.value);
     }
   } else if ($.isObject(x) || $.isFunction(x)) {
-    let called = false;
+    //下面这段代码是整个promise中最难以理解的，主要是考虑到并发时，无法确定哪一段代码先执行到。
+    let called = false;//防止调用多次
     try {
       let thenHandler = x.then;
 
@@ -56,7 +57,6 @@ function Resolve(promise, x) {
     } catch (e) {
       if (!called) {
         promise.reject(e);
-        called = true;
       }
     }
   } else {
@@ -64,10 +64,17 @@ function Resolve(promise, x) {
   }
 }
 
+function fulfillFallBack(value) {
+  return value;
+}
+
+function rejectFallBack(reason) {
+  throw reason;
+}
+
 class Promis {
   state: State = State.pending;
   value: any;
-  reason: any;
   //可能会多次调用then函数
   queue = [];
   handlers = {
@@ -85,27 +92,11 @@ class Promis {
     }
   }
 
-  reject(reason) {
-    this.transition(State.REJECTED, reason);
-  }
-
-  fulfill(value) {
-    this.transition(State.FULFILLED, value);
-  }
-
   process() {
-    let that = this,
-        fulfillFallBack = function (value) {
-          return value;
-        },
-        rejectFallBack = function (reason) {
-          throw reason;
-        };
-
     if (this.state === State.pending) {
       return;
     }
-
+    let that = this;
     $.runAsync(function () {
       while (that.queue.length) {
         let queuedPromise = that.queue.shift(),
@@ -123,10 +114,9 @@ class Promis {
         try {
           value = handler(that.value);
         } catch (e) {
-          queuedPromise.transition(State.REJECTED, e);
+          queuedPromise.reject(e);
           continue;
         }
-
         Resolve(queuedPromise, value);
       }
     });
@@ -137,6 +127,14 @@ class Promis {
     this.value = value;
     this.state = state;
     this.process();
+  }
+
+  reject(reason) {
+    this.transition(State.REJECTED, reason);
+  }
+
+  fulfill(value) {
+    this.transition(State.FULFILLED, value);
   }
 
   then(onFulfilled, onRejected) {
