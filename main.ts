@@ -12,15 +12,12 @@ const $ = {
   isObject(val) {
     return val && typeof val === "object";
   },
-  isPromise(val) {
-    return val instanceof Promis;
-  }
 }
 
 function Resolve(promise, x) {
   if (promise === x) {
     promise.reject(new TypeError("The promise and its value refer to the same object"));
-  } else if ($.isPromise(x)) {
+  } else if (x instanceof Promis) {
     if (x.state === State.pending) {
       x.then(val => {
         Resolve(promise, val);
@@ -35,7 +32,6 @@ function Resolve(promise, x) {
     let called = false;//防止调用多次
     try {
       let thenHandler = x.then;
-
       if ($.isFunction(thenHandler)) {
         thenHandler.call(x,
             function (y) {

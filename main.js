@@ -42,6 +42,11 @@ function Resolve(promise, x) {
         try {
             var thenHandler = x.then;
             if ($.isFunction(thenHandler)) {
+                if ($.isFunction(x)) {
+                    console.log("==============");
+                    console.log(x.toString());
+                    throw new Error("baga");
+                }
                 thenHandler.call(x, function (y) {
                     if (!called_1) {
                         Resolve(promise, y);
